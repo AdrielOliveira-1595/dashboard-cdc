@@ -212,9 +212,6 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         return None
 
     df = df.copy()
-    # DEBUG DATA — remover depois
-    with st.expander("🔧 Debug Data", expanded=True):
-        st.write("Exemplos da coluna Data (raw):", df[cfg["col_data"]].head(5).tolist())
 
     # ── Datas ──
     # Suporta formatos como "Sáb, 02/05/26 09:01" extraindo dd/mm/yy
@@ -501,7 +498,16 @@ if df is None:
     st.error("Não foi possível processar os dados. Verifique a planilha.")
     st.stop()
 
-hoje        = datetime.now().date()
+# Usa a data mais recente dos dados como "hoje" para evitar problemas de fuso horário
+_hoje_servidor = datetime.now().date()
+# Tenta inferir o dia atual a partir dos dados
+try:
+    _datas_validas = df["_date"].dropna()
+    _max_data = max(_datas_validas) if len(_datas_validas) > 0 else _hoje_servidor
+    # Se a data máxima dos dados for próxima do servidor, usa ela
+    hoje = _max_data if abs((_max_data - _hoje_servidor).days) <= 1 else _hoje_servidor
+except Exception:
+    hoje = _hoje_servidor
 mes_atual   = hoje.month
 ano_atual   = hoje.year
 
