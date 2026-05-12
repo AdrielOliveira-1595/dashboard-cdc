@@ -425,20 +425,19 @@ SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=cs
 @st.cache_data(ttl=300, show_spinner=False)  # cache de 5 minutos
 def carregar_sheets(url: str) -> pd.DataFrame:
     import io, urllib.request
+    from io import StringIO
     try:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
-        # Detecta encoding correto testando se caracteres brasileiros aparecem bem
-        for enc in ("utf-8-sig", "utf-8", "cp1252", "iso-8859-1", "latin-1"):
+        # Tenta cada encoding — Google Sheets exporta UTF-8
+        for enc in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
             try:
-                df_test = pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc, nrows=5)
-                sample = df_test.to_string()
-                if "Ã" not in sample and "â" not in sample:
-                    return pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc)
-            except Exception:
+                return pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc)
+            except (UnicodeDecodeError, Exception):
                 continue
-        # Fallback final
-        return pd.read_csv(io.BytesIO(raw), sep=",", encoding="cp1252")
+        # Último recurso: decodifica ignorando bytes inválidos
+        text = raw.decode("utf-8", errors="ignore")
+        return pd.read_csv(io.StringIO(text), sep=",")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
