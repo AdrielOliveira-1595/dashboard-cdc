@@ -176,10 +176,13 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
     cfg = CONFIG
     erros = []
 
+    # ── Normaliza nomes de colunas ANTES de verificar ──
+    df.columns = df.columns.str.strip()
+
     # ── Verificar colunas obrigatórias ──
     colunas_ok = {
         cfg["col_data"]:     "Data",
-        cfg["col_valor"]:    "Valor",
+        cfg["col_valor"]:    "Valor Total",
         cfg["col_status"]:   "Status",
         cfg["col_vendedor"]: "Vendedor",
         cfg["col_loja"]:     "Loja",
@@ -193,8 +196,6 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         return None
 
     df = df.copy()
-    # Normaliza nomes de colunas (remove espaços extras)
-    df.columns = df.columns.str.strip()
 
     # ── Datas ──
     # Suporta formatos como "Sáb, 02/05/26 09:01" extraindo dd/mm/yy
