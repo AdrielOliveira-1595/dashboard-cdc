@@ -506,18 +506,16 @@ if df is None:
     st.error("Não foi possível processar os dados. Verifique a planilha.")
     st.stop()
 
-# Usa a data mais recente dos dados como "hoje" para evitar problemas de fuso horário
-_hoje_servidor = datetime.now().date()
-# Tenta inferir o dia atual a partir dos dados
+# Pega a data mais recente dos dados (evita problema de fuso UTC do servidor)
 try:
     _datas_validas = df["_date"].dropna()
-    _max_data = max(_datas_validas) if len(_datas_validas) > 0 else _hoje_servidor
-    # Se a data máxima dos dados for próxima do servidor, usa ela
-    hoje = _max_data if abs((_max_data - _hoje_servidor).days) <= 1 else _hoje_servidor
+    hoje = max(_datas_validas)
 except Exception:
-    hoje = _hoje_servidor
-mes_atual   = hoje.month
-ano_atual   = hoje.year
+    hoje = datetime.now().date()
+mes_atual = hoje.month
+ano_atual = hoje.year
+# String de data no formato brasileiro
+_hoje_str = f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}"
 
 # ── Filtro de Loja ──
 apelidos_disponiveis = sorted(df["_loja_apelido"].unique().tolist())
@@ -571,9 +569,9 @@ with tab1:
     st.markdown("---")
 
     if df_dia.empty:
-        st.info(f"Nenhuma venda registrada hoje ({hoje.day:02d}/{hoje.month:02d}/{hoje.year}).")
+        st.info(f"Nenhuma venda registrada hoje ({_hoje_str}).")
     else:
-        ranking_vendedores(df_dia, f"🏆 Ranking do Dia — {hoje.day:02d}/{hoje.month:02d}/{hoje.year}")
+        ranking_vendedores(df_dia, f"🏆 Ranking do Dia — {_hoje_str}")
 
 
 # ════════════════════════════
@@ -640,6 +638,6 @@ with st.expander("🔍 Ver dados brutos (conferência)"):
 # ── Rodapé ──
 st.markdown(f"""
 <div style="text-align:center;padding:30px 0 10px;font-size:11px;color:#555577">
-    Atualizado ao fazer upload · {hoje.day:02d}/{hoje.month:02d}/{hoje.year} · Casa do Celular
+    Atualizado ao fazer upload · {_hoje_str} · Casa do Celular
 </div>
 """, unsafe_allow_html=True)
