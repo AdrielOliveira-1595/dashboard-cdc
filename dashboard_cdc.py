@@ -435,15 +435,30 @@ def carregar_sheets(url: str) -> pd.DataFrame:
     try:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
-        # O Sheets exporta 2 versões: col A (original ;) com acentos corretos
-        # e cols B+ (separadas por vírgula) com encoding corrompido.
-        # Lemos sempre a col A com separador ; que preserva os acentos.
+        # O Sheets exporta: col A = dados originais com ;
+        # cols B+ = dados separados por vírgula (encoding corrompido)
+        # Estratégia: ler com vírgula, pegar só col A, re-parsear com ;
         for enc in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
             try:
-                candidate = pd.read_csv(io.BytesIO(raw), sep=";", encoding=enc)
-                sample = " ".join(candidate.iloc[:, 1].astype(str).head(5).tolist())
-                if "Ã" not in sample and "©" not in sample:
-                    return candidate
+                raw_df = pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc, header=0)
+                # Col A contém os dados originais separados por ;
+                col_a = raw_df.iloc[:, 0].astype(str)
+                # Verifica se col A tem os dados com ;
+                if col_a.str.contains(";").sum() > len(col_a) * 0.5:
+                    # Re-parseia col A como CSV com ;
+                    from io import StringIO as _SIO
+                    # Pega o header da col A da linha 0
+                    header_row = col_a.iloc[0] if ";" in str(col_a.iloc[0]) else None
+                    csv_text = "\n".join(col_a.tolist())
+                    # Adiciona header se não está na col A
+                    if header_row is None or "Id" not in str(header_row):
+                        cols = raw_df.columns[0]
+                        csv_text = cols + "\n" + csv_text
+                    result = pd.read_csv(_SIO(csv_text), sep=";", encoding="utf-8")
+                    # Verifica acentos
+                    sample = result.iloc[:, 1].astype(str).head(5).str.cat()
+                    if "Ã" not in sample:
+                        return result
             except Exception:
                 continue
         return pd.read_csv(io.BytesIO(raw), sep=";", encoding="utf-8")
