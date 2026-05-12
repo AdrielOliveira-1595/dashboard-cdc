@@ -445,33 +445,39 @@ def carregar_sheets(url: str) -> pd.DataFrame:
     try:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
-        # O Sheets exporta: col A = dados originais com ;
-        # cols B+ = dados separados por vírgula (encoding corrompido)
-        # Estratégia: ler com vírgula, pegar só col A, re-parsear com ;
+        from io import StringIO as _SIO
+        # Detecta automaticamente se os dados estão com ; ou ,
         for enc in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
             try:
-                raw_df = pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc, header=0)
-                # Col A contém os dados originais separados por ;
-                col_a = raw_df.iloc[:, 0].astype(str)
-                # Verifica se col A tem os dados com ;
-                if col_a.str.contains(";").sum() > len(col_a) * 0.5:
-                    # Re-parseia col A como CSV com ;
-                    from io import StringIO as _SIO
-                    # Pega o header da col A da linha 0
-                    header_row = col_a.iloc[0] if ";" in str(col_a.iloc[0]) else None
-                    csv_text = "\n".join(col_a.tolist())
-                    # Adiciona header se não está na col A
-                    if header_row is None or "Id" not in str(header_row):
-                        cols = raw_df.columns[0]
-                        csv_text = cols + "\n" + csv_text
-                    result = pd.read_csv(_SIO(csv_text), sep=";", encoding="utf-8")
-                    # Verifica acentos
-                    sample = result.iloc[:, 1].astype(str).head(5).str.cat()
-                    if "Ã" not in sample:
-                        return result
+                # Lê as primeiras linhas para detectar o separador
+                sample_text = raw.decode(enc, errors="replace")[:2000]
+                first_line = sample_text.split("\n")[0]
+                sep = ";" if first_line.count(";") > first_line.count(",") else ","
+
+                if sep == ";":
+                    # Dados originais com ; — lê direto
+                    candidate = pd.read_csv(_SIO(sample_text), sep=";")
+                    full = pd.read_csv(_SIO(raw.decode(enc, errors="replace")), sep=";")
+                else:
+                    # Sheets exportou com , — verifica se col A tem ; dentro
+                    raw_df = pd.read_csv(_SIO(sample_text), sep=",")
+                    col_a = raw_df.iloc[:, 0].astype(str)
+                    if col_a.str.contains(";").sum() > len(col_a) * 0.3:
+                        # Re-parseia col A com ;
+                        full_text = raw.decode(enc, errors="replace")
+                        all_rows = pd.read_csv(_SIO(full_text), sep=",").iloc[:, 0].astype(str)
+                        csv_text = "\n".join(all_rows.tolist())
+                        full = pd.read_csv(_SIO(csv_text), sep=";")
+                    else:
+                        full = pd.read_csv(_SIO(raw.decode(enc, errors="replace")), sep=",")
+
+                # Valida acentos
+                sample_str = full.iloc[:3, 1].astype(str).str.cat()
+                if "Ã" not in sample_str and "©" not in sample_str:
+                    return full
             except Exception:
                 continue
-        return pd.read_csv(io.BytesIO(raw), sep=";", encoding="utf-8")
+        return pd.read_csv(io.BytesIO(raw), sep=";", encoding="utf-8", errors="replace")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
