@@ -432,14 +432,13 @@ def carregar_sheets(url: str) -> pd.DataFrame:
         for enc in ("utf-8-sig", "utf-8", "cp1252", "iso-8859-1", "latin-1"):
             try:
                 df_test = pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc, nrows=5)
-                # Verifica se tem caractere estranho nos dados
                 sample = df_test.to_string()
                 if "Ã" not in sample and "â" not in sample:
                     return pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc)
             except Exception:
                 continue
-        # Se nenhum passou no teste, usa cp1252 que lida bem com português
-        return pd.read_csv(io.BytesIO(raw), sep=",", encoding="cp1252", errors="replace")
+        # Fallback final
+        return pd.read_csv(io.BytesIO(raw), sep=",", encoding="cp1252")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
