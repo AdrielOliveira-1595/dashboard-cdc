@@ -480,10 +480,12 @@ tab1, tab2 = st.tabs(["🚀 Hoje", "📅 Este Mês"])
 with tab1:
     df_dia = df_filtrado[df_filtrado["_date"] == hoje]
 
-    total_dia   = df_dia["_valor_liquido"].sum()
-    qtd_vendas  = df_dia[~df_dia["_is_negativo"]]["_valor_liquido"].count()
-    qtd_cancel  = df_dia[df_dia["_is_negativo"]]["_valor_liquido"].count()
-    cancel_val  = df_dia[df_dia["_is_negativo"]]["_valor_liquido"].sum()
+    if "_is_negativo" not in df_dia.columns: df_dia = df_dia.assign(_is_negativo=False)
+    if "_valor_liquido" not in df_dia.columns: df_dia = df_dia.assign(_valor_liquido=0.0)
+    total_dia  = df_dia["_valor_liquido"].sum()
+    qtd_vendas = int(df_dia[~df_dia["_is_negativo"]]["_valor_liquido"].count())
+    qtd_cancel = int(df_dia[df_dia["_is_negativo"]]["_valor_liquido"].count())
+    cancel_val = df_dia[df_dia["_is_negativo"]]["_valor_liquido"].sum()
 
     # KPIs
     c1, c2, c3 = st.columns(3)
@@ -510,10 +512,12 @@ with tab2:
         (df_filtrado["_data"].dt.year  == ano_atual)
     ]
 
-    total_mes   = df_mes["_valor_liquido"].sum()
-    qtd_mes     = df_mes[~df_mes["_is_negativo"]].shape[0]
-    ticket_med  = df_mes[~df_mes["_is_negativo"]]["_valor_liquido"].mean()
-    cancel_mes  = df_mes[df_mes["_is_negativo"]]["_valor_liquido"].sum()
+    if "_is_negativo" not in df_mes.columns: df_mes = df_mes.assign(_is_negativo=False)
+    if "_valor_liquido" not in df_mes.columns: df_mes = df_mes.assign(_valor_liquido=0.0)
+    total_mes  = df_mes["_valor_liquido"].sum()
+    qtd_mes    = int(df_mes[~df_mes["_is_negativo"]].shape[0])
+    ticket_med = df_mes[~df_mes["_is_negativo"]]["_valor_liquido"].mean()
+    cancel_mes = df_mes[df_mes["_is_negativo"]]["_valor_liquido"].sum()
 
     # KPIs
     c1, c2 = st.columns(2)
