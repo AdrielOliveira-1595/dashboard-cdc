@@ -196,12 +196,6 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         return None
 
     df = df.copy()
-    # DEBUG temporário — remover após resolver
-    with st.expander("🔧 Debug (remover depois)", expanded=True):
-        st.write("Shape:", df.shape)
-        st.write("Colunas:", df.columns.tolist())
-        st.write("Primeiras linhas:")
-        st.dataframe(df.head(3))
 
     # ── Datas ──
     # Suporta formatos como "Sáb, 02/05/26 09:01" extraindo dd/mm/yy
