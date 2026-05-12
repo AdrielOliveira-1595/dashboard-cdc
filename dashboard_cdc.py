@@ -518,7 +518,6 @@ except Exception:
     hoje = _hoje_servidor
 mes_atual   = hoje.month
 ano_atual   = hoje.year
-st.write(f"DEBUG hoje={hoje}, mes={mes_atual}, ano={ano_atual}")
 
 # ── Filtro de Loja ──
 apelidos_disponiveis = sorted(df["_loja_apelido"].unique().tolist())
@@ -572,9 +571,9 @@ with tab1:
     st.markdown("---")
 
     if df_dia.empty:
-        st.info(f"Nenhuma venda registrada hoje ({hoje.strftime('%d/%m/%Y')}).")
+        st.info(f"Nenhuma venda registrada hoje ({hoje.day:02d}/{hoje.month:02d}/{hoje.year}).")
     else:
-        ranking_vendedores(df_dia, f"🏆 Ranking do Dia — {hoje.strftime('%d/%m/%Y')}")
+        ranking_vendedores(df_dia, f"🏆 Ranking do Dia — {hoje.day:02d}/{hoje.month:02d}/{hoje.year}")
 
 
 # ════════════════════════════
@@ -641,6 +640,6 @@ with st.expander("🔍 Ver dados brutos (conferência)"):
 # ── Rodapé ──
 st.markdown(f"""
 <div style="text-align:center;padding:30px 0 10px;font-size:11px;color:#555577">
-    Atualizado ao fazer upload · {hoje.strftime("%d/%m/%Y")} · Casa do Celular
+    Atualizado ao fazer upload · {hoje.day:02d}/{hoje.month:02d}/{hoje.year} · Casa do Celular
 </div>
 """, unsafe_allow_html=True)
