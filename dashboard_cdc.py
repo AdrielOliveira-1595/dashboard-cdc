@@ -524,8 +524,11 @@ with st.expander("🔍 Ver dados brutos (conferência)"):
         CONFIG["col_status"], CONFIG["col_valor"], "_valor_liquido"
     ]
     colunas_exibir = [c for c in colunas_exibir if c in df_filtrado.columns]
+    df_exibir = df_filtrado[colunas_exibir].copy()
+    if "_data" in df_filtrado.columns:
+        df_exibir = df_exibir.assign(_ordem=df_filtrado["_data"].values).sort_values("_ordem", ascending=False).drop(columns=["_ordem"])
     st.dataframe(
-        df_filtrado[colunas_exibir].sort_values("_data", ascending=False).head(200),
+        df_exibir.head(200),
         use_container_width=True,
         height=300,
     )
