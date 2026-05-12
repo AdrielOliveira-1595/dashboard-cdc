@@ -20,11 +20,11 @@ warnings.filterwarnings("ignore")
 # ══════════════════════════════════════════════════════════════════
 CONFIG = {
     # ── Separador do CSV ──────────────────────────────────────────
-    # Confirmado: Tab
-    "sep": "\t",
+    # Confirmado: ponto e vírgula
+    "sep": ";",
 
     # ── Nomes das colunas (confirmados) ──────────────────────────
-    "col_data":     "Data",
+    "col_data":     "    Data    ",
     "col_valor":    "Valor Total",   # confirmado
     "col_status":   "Status",        # confirmado — texto ex: "Cancelado"
     "col_vendedor": "Vendedor",
