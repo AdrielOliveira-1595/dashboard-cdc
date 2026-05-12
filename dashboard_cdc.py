@@ -212,6 +212,9 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         return None
 
     df = df.copy()
+    # DEBUG DATA — remover depois
+    with st.expander("🔧 Debug Data", expanded=True):
+        st.write("Exemplos da coluna Data (raw):", df[cfg["col_data"]].head(5).tolist())
 
     # ── Datas ──
     # Suporta formatos como "Sáb, 02/05/26 09:01" extraindo dd/mm/yy
