@@ -408,25 +408,39 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Upload ──
-uploaded_file = st.file_uploader(
-    "📂 Suba o CSV de vendas",
-    type=["csv"],
-    help="Arquivo exportado do sistema de vendas",
-)
+# ── ID da planilha Google Sheets ──
+SHEET_ID = "1xC9E9Ux5nyxuEO6zdbMcfjFU7_iv3jXuJTLJmzzkIU0"
+SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=0"
 
-if not uploaded_file:
-    st.markdown("""
-    <div style="text-align:center;padding:40px 20px;color:#8888AA">
-        <div style="font-size:48px;margin-bottom:12px">⬆️</div>
-        <div style="font-size:16px;font-weight:600">Suba o arquivo CSV para ver os rankings</div>
-        <div style="font-size:13px;margin-top:6px">Teixeira de Freitas · Barreiras · Laranjeiras</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.stop()
+@st.cache_data(ttl=300, show_spinner=False)  # cache de 5 minutos
+def carregar_sheets(url: str) -> pd.DataFrame:
+    import io, urllib.request
+    try:
+        with urllib.request.urlopen(url) as r:
+            raw = r.read()
+        try:
+            return pd.read_csv(io.BytesIO(raw), sep=CONFIG["sep"], encoding="utf-8")
+        except Exception:
+            return pd.read_csv(io.BytesIO(raw), sep=CONFIG["sep"], encoding="latin-1")
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar a planilha: {e}")
+        st.stop()
 
-# ── Processar ──
-with st.spinner("Calculando vendas líquidas..."):
-    df_raw = carregar_csv(uploaded_file.read(), CONFIG["sep"])
+# ── Botão de atualizar ──
+col_refresh, col_info = st.columns([1, 3])
+with col_refresh:
+    if st.button("🔄 Atualizar dados"):
+        st.cache_data.clear()
+        st.rerun()
+with col_info:
+    st.markdown(
+        "<div style='padding:8px 0;font-size:12px;color:#8888AA'>Dados atualizados a cada 5 min automaticamente</div>",
+        unsafe_allow_html=True
+    )
+
+# ── Carregar e processar ──
+with st.spinner("Carregando dados da planilha..."):
+    df_raw = carregar_sheets(SHEET_URL)
     df = processar_dados(df_raw)
 
 if df is None:
