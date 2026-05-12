@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 CONFIG = {
     # ── Separador do CSV ──────────────────────────────────────────
     # Confirmado: ponto e vírgula
-    "sep": ";",
+    "sep": ",",
 
     # ── Nomes das colunas (confirmados) ──────────────────────────
     "col_data":     "Data",
@@ -204,8 +204,11 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         if pd.isna(val):
             return pd.NaT
         s = str(val).strip()
-        # Tenta extrair dd/mm/yy ou dd/mm/yyyy
-        m = _re.search(r'(\d{2}/\d{2}/\d{2,4})', s)
+        # Remove dia da semana abreviado ex: "sáb., " ou "Sáb, "
+        s = _re.sub(r'^[a-záàâãéèêíïóôõöúüçñ]{2,4}\.?,?\s*', '', s, flags=_re.IGNORECASE)
+        s = s.strip()
+        # Extrai dd/mm/yy ou dd/mm/yyyy
+        m = _re.search(r'(\d{1,2}/\d{1,2}/\d{2,4})', s)
         if m:
             parte = m.group(1)
             for fmt in ("%d/%m/%y", "%d/%m/%Y"):
@@ -213,7 +216,14 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
                     return pd.to_datetime(parte, format=fmt)
                 except Exception:
                     continue
-        # Fallback genérico
+        # Formato ISO ex: "2026-05-12"
+        m2 = _re.search(r'(\d{4}-\d{2}-\d{2})', s)
+        if m2:
+            try:
+                return pd.to_datetime(m2.group(1))
+            except Exception:
+                pass
+        # Fallback
         try:
             return pd.to_datetime(s, dayfirst=True)
         except Exception:
@@ -224,9 +234,6 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
     else:
         df["_data"] = pd.to_datetime(df[cfg["col_data"]], format=cfg["formato_data"], errors="coerce")
 
-    nulos_data = df["_data"].isna().sum()
-    if nulos_data > 0:
-        st.warning(f"⚠️ {nulos_data} linha(s) com data inválida foram ignoradas.")
     df = df.dropna(subset=["_data"])
 
     # ── Valor numérico ──
@@ -422,9 +429,9 @@ def carregar_sheets(url: str) -> pd.DataFrame:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
         try:
-            return pd.read_csv(io.BytesIO(raw), sep=CONFIG["sep"], encoding="utf-8")
+            return pd.read_csv(io.BytesIO(raw), sep=",", encoding="utf-8")
         except Exception:
-            return pd.read_csv(io.BytesIO(raw), sep=CONFIG["sep"], encoding="latin-1")
+            return pd.read_csv(io.BytesIO(raw), sep=",", encoding="latin-1")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
