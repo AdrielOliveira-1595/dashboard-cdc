@@ -227,14 +227,22 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         m = _re.search(r'(\d{1,2}/\d{1,2}/\d{2,4})', s)
         if m:
             parte = m.group(1)
-            # Força explicitamente dd/mm/yy ou dd/mm/yyyy
-            for fmt in ("%d/%m/%y", "%d/%m/%Y"):
+            partes = parte.split("/")
+            if len(partes) == 3:
+                dd, mm, yy = partes
+                # Garante dd e mm na ordem correta
+                dd, mm = int(dd), int(mm)
+                yy = int(yy)
+                if yy < 100:
+                    yy += 2000
+                # Se mm > 12, provavelmente estão invertidos
+                if mm > 12:
+                    dd, mm = mm, dd
                 try:
-                    result = pd.to_datetime(parte, format=fmt)
-                    if result.year >= 2020:  # valida que o ano faz sentido
-                        return result
+                    from datetime import date as _date
+                    return pd.Timestamp(_date(yy, mm, dd))
                 except Exception:
-                    continue
+                    pass
         # Formato ISO ex: "2026-05-12"
         m2 = _re.search(r'(\d{4}-\d{2}-\d{2})', s)
         if m2:
