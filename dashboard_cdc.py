@@ -428,10 +428,12 @@ def carregar_sheets(url: str) -> pd.DataFrame:
     try:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
-        try:
-            return pd.read_csv(io.BytesIO(raw), sep=",", encoding="utf-8")
-        except Exception:
-            return pd.read_csv(io.BytesIO(raw), sep=",", encoding="latin-1")
+        for enc in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
+            try:
+                return pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc)
+            except Exception:
+                continue
+        return pd.read_csv(io.BytesIO(raw), sep=",", encoding="latin-1", errors="replace")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
