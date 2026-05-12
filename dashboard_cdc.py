@@ -155,10 +155,12 @@ def formatar_brl(valor: float) -> str:
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def icone_posicao(pos: int) -> str:
-    return ["🥇", "🥈", "🥉"].get(pos - 1, f"#{pos}")
+    icons = ["🥇", "🥈", "🥉"]
+    return icons[pos - 1] if 1 <= pos <= 3 else f"#{pos}"
 
 def cor_posicao(pos: int) -> str:
-    return ["#F5C518", "#C0C0C0", "#CD7F32"].get(pos - 1, "#8888AA")
+    cores = ["#F5C518", "#C0C0C0", "#CD7F32"]
+    return cores[pos - 1] if 1 <= pos <= 3 else "#8888AA"
 
 @st.cache_data(show_spinner=False)
 def carregar_csv(file_bytes: bytes, sep: str) -> pd.DataFrame:
