@@ -518,6 +518,7 @@ except Exception:
     hoje = _hoje_servidor
 mes_atual   = hoje.month
 ano_atual   = hoje.year
+st.write(f"DEBUG hoje={hoje}, mes={mes_atual}, ano={ano_atual}")
 
 # ── Filtro de Loja ──
 apelidos_disponiveis = sorted(df["_loja_apelido"].unique().tolist())
