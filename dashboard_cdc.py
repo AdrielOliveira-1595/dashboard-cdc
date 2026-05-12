@@ -223,15 +223,28 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         # Remove dia da semana abreviado ex: "sáb., " ou "Sáb, "
         s = _re.sub(r'^[a-záàâãéèêíïóôõöúüçñ]{2,4}\.?,?\s*', '', s, flags=_re.IGNORECASE)
         s = s.strip()
-        # Extrai dd/mm/yy ou dd/mm/yyyy
+        # Extrai dd/mm/yy ou dd/mm/yyyy — sempre trata como dia/mês/ano
         m = _re.search(r'(\d{1,2}/\d{1,2}/\d{2,4})', s)
         if m:
             parte = m.group(1)
-            for fmt in ("%d/%m/%y", "%d/%m/%Y"):
-                try:
-                    return pd.to_datetime(parte, format=fmt)
-                except Exception:
-                    continue
+            partes = parte.split("/")
+            # Garante que dd e mm estão na ordem certa (dd <= 31, mm <= 12)
+            if len(partes) == 3:
+                d, mo, y = partes
+                # Se primeiro número > 12, certamente é dia
+                # Força formato dia/mês
+                if int(d) > 12:
+                    for fmt in ("%d/%m/%y", "%d/%m/%Y"):
+                        try:
+                            return pd.to_datetime(parte, format=fmt)
+                        except Exception:
+                            continue
+                else:
+                    # Ambíguo — usa dayfirst=True
+                    try:
+                        return pd.to_datetime(parte, dayfirst=True)
+                    except Exception:
+                        pass
         # Formato ISO ex: "2026-05-12"
         m2 = _re.search(r'(\d{4}-\d{2}-\d{2})', s)
         if m2:
