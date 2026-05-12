@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 CONFIG = {
     # ── Separador do CSV ──────────────────────────────────────────
     # Confirmado: ponto e vírgula
-    "sep": ",",
+    "sep": ";",
 
     # ── Nomes das colunas (confirmados) ──────────────────────────
     "col_data":     "Data",
@@ -429,16 +429,18 @@ def carregar_sheets(url: str) -> pd.DataFrame:
     try:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
-        # Decodifica sempre como UTF-8 ignorando bytes inválidos
-        text = raw.decode("utf-8", errors="replace")
-        # Corrige sequências mal codificadas comuns (latin1 lido como utf-8)
-        try:
-            text_fixed = raw.decode("latin-1").encode("utf-8").decode("utf-8")
-            if "Ã" not in text_fixed[:500]:
-                text = text_fixed
-        except Exception:
-            pass
-        return pd.read_csv(StringIO(text), sep=",")
+        # O Sheets exporta 2 versões: col A (original ;) com acentos corretos
+        # e cols B+ (separadas por vírgula) com encoding corrompido.
+        # Lemos sempre a col A com separador ; que preserva os acentos.
+        for enc in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
+            try:
+                candidate = pd.read_csv(io.BytesIO(raw), sep=";", encoding=enc)
+                sample = " ".join(candidate.iloc[:, 1].astype(str).head(5).tolist())
+                if "Ã" not in sample and "©" not in sample:
+                    return candidate
+            except Exception:
+                continue
+        return pd.read_csv(io.BytesIO(raw), sep=";", encoding="utf-8")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
