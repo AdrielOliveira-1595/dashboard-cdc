@@ -24,7 +24,7 @@ CONFIG = {
     "sep": ";",
 
     # ── Nomes das colunas (confirmados) ──────────────────────────
-    "col_data":     "    Data    ",
+    "col_data":     "Data",
     "col_valor":    "Valor Total",   # confirmado
     "col_status":   "Status",        # confirmado — texto ex: "Cancelado"
     "col_vendedor": "Vendedor",
@@ -193,6 +193,8 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         return None
 
     df = df.copy()
+    # Normaliza nomes de colunas (remove espaços extras)
+    df.columns = df.columns.str.strip()
 
     # ── Datas ──
     # Suporta formatos como "Sáb, 02/05/26 09:01" extraindo dd/mm/yy
@@ -444,6 +446,7 @@ with st.spinner("Carregando dados da planilha..."):
     df = processar_dados(df_raw)
 
 if df is None:
+    st.error("Não foi possível processar os dados. Verifique a planilha.")
     st.stop()
 
 hoje        = datetime.now().date()
