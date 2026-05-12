@@ -477,7 +477,7 @@ def carregar_sheets(url: str) -> pd.DataFrame:
                     return full
             except Exception:
                 continue
-        return pd.read_csv(io.BytesIO(raw), sep=";", encoding="utf-8", errors="replace")
+        return pd.read_csv(io.BytesIO(raw), sep=";", encoding="utf-8")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
