@@ -193,13 +193,31 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
     df = df.copy()
 
     # ── Datas ──
-    try:
-        if cfg["formato_data"] == "mixed":
-            df["_data"] = pd.to_datetime(df[cfg["col_data"]], dayfirst=True, errors="coerce")
-        else:
-            df["_data"] = pd.to_datetime(df[cfg["col_data"]], format=cfg["formato_data"], errors="coerce")
-    except Exception:
-        df["_data"] = pd.to_datetime(df[cfg["col_data"]], dayfirst=True, errors="coerce")
+    # Suporta formatos como "Sáb, 02/05/26 09:01" extraindo dd/mm/yy
+    import re as _re
+    def _parse_date(val):
+        if pd.isna(val):
+            return pd.NaT
+        s = str(val).strip()
+        # Tenta extrair dd/mm/yy ou dd/mm/yyyy
+        m = _re.search(r'(\d{2}/\d{2}/\d{2,4})', s)
+        if m:
+            parte = m.group(1)
+            for fmt in ("%d/%m/%y", "%d/%m/%Y"):
+                try:
+                    return pd.to_datetime(parte, format=fmt)
+                except Exception:
+                    continue
+        # Fallback genérico
+        try:
+            return pd.to_datetime(s, dayfirst=True)
+        except Exception:
+            return pd.NaT
+
+    if cfg["formato_data"] == "mixed":
+        df["_data"] = df[cfg["col_data"]].apply(_parse_date)
+    else:
+        df["_data"] = pd.to_datetime(df[cfg["col_data"]], format=cfg["formato_data"], errors="coerce")
 
     nulos_data = df["_data"].isna().sum()
     if nulos_data > 0:
