@@ -227,15 +227,25 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
     df = df.dropna(subset=["_data"])
 
     # ── Valor numérico ──
-    df["_valor_raw"] = (
-        df[cfg["col_valor"]]
-        .astype(str)
-        .str.replace("R$", "", regex=False)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
-        .str.strip()
-    )
-    df["_valor_raw"] = pd.to_numeric(df["_valor_raw"], errors="coerce").fillna(0)
+    def _parse_valor(val):
+        """Converte valores como 1.499,00 ou 1499.00 ou 1499 para float."""
+        import re as _re2
+        if pd.isna(val):
+            return 0.0
+        s = str(val).strip().replace("R$", "").replace(" ", "")
+        # Formato brasileiro: 1.499,00 → separador de milhar=. e decimal=,
+        if "," in s and "." in s:
+            # ex: 1.499,00
+            s = s.replace(".", "").replace(",", ".")
+        elif "," in s and "." not in s:
+            # ex: 1499,00
+            s = s.replace(",", ".")
+        # else: já é float americano ex: 1499.00 ou inteiro 1499
+        try:
+            return float(s)
+        except Exception:
+            return 0.0
+    df["_valor_raw"] = df[cfg["col_valor"]].apply(_parse_valor)
 
     # ── Calcular Venda Líquida ──
     negativos = cfg["status_negativos"]
