@@ -275,7 +275,7 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
     apelidos = {k.upper(): v for k, v in cfg["lojas_apelidos"].items()}
     df["_loja_apelido"] = df["_loja"].map(apelidos).fillna(df["_loja"])
 
-    df["_vendedor"] = df[cfg["col_vendedor"]].astype(str).str.strip().str.title()
+    df["_vendedor"] = df[cfg["col_vendedor"]].astype(str).str.strip()
     df["_date"] = df["_data"].dt.date
 
     return df
@@ -429,15 +429,16 @@ def carregar_sheets(url: str) -> pd.DataFrame:
     try:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
-        # Tenta cada encoding — Google Sheets exporta UTF-8
-        for enc in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
-            try:
-                return pd.read_csv(io.BytesIO(raw), sep=",", encoding=enc)
-            except (UnicodeDecodeError, Exception):
-                continue
-        # Último recurso: decodifica ignorando bytes inválidos
-        text = raw.decode("utf-8", errors="ignore")
-        return pd.read_csv(io.StringIO(text), sep=",")
+        # Decodifica sempre como UTF-8 ignorando bytes inválidos
+        text = raw.decode("utf-8", errors="replace")
+        # Corrige sequências mal codificadas comuns (latin1 lido como utf-8)
+        try:
+            text_fixed = raw.decode("latin-1").encode("utf-8").decode("utf-8")
+            if "Ã" not in text_fixed[:500]:
+                text = text_fixed
+        except Exception:
+            pass
+        return pd.read_csv(StringIO(text), sep=",")
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
