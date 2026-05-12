@@ -516,7 +516,6 @@ mes_atual = hoje.month
 ano_atual = hoje.year
 # String de data no formato brasileiro
 _hoje_str = f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}"
-st.write(f"DEBUG: hoje={hoje} | day={hoje.day} | month={hoje.month} | str={_hoje_str}")
 
 # ── Filtro de Loja ──
 apelidos_disponiveis = sorted(df["_loja_apelido"].unique().tolist())
