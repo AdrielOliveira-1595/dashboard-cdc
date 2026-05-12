@@ -484,12 +484,16 @@ tab1, tab2 = st.tabs(["🚀 Hoje", "📅 Este Mês"])
 with tab1:
     df_dia = df_filtrado[df_filtrado["_date"] == hoje]
 
-    if "_is_negativo" not in df_dia.columns: df_dia = df_dia.assign(_is_negativo=False)
-    if "_valor_liquido" not in df_dia.columns: df_dia = df_dia.assign(_valor_liquido=0.0)
-    total_dia  = df_dia["_valor_liquido"].sum()
-    qtd_vendas = int(df_dia[~df_dia["_is_negativo"]]["_valor_liquido"].count())
-    qtd_cancel = int(df_dia[df_dia["_is_negativo"]]["_valor_liquido"].count())
-    cancel_val = df_dia[df_dia["_is_negativo"]]["_valor_liquido"].sum()
+    # Garante colunas mesmo se df_dia for vazio
+    for _col, _val in [("_is_negativo", False), ("_valor_liquido", 0.0)]:
+        if _col not in df_dia.columns:
+            df_dia = df_dia.copy()
+            df_dia[_col] = _val
+    _neg = df_dia["_is_negativo"].astype(bool)
+    total_dia  = float(df_dia["_valor_liquido"].sum())
+    qtd_vendas = int((~_neg).sum())
+    qtd_cancel = int(_neg.sum())
+    cancel_val = float(df_dia.loc[_neg, "_valor_liquido"].sum())
 
     # KPIs
     c1, c2, c3 = st.columns(3)
@@ -516,12 +520,15 @@ with tab2:
         (df_filtrado["_data"].dt.year  == ano_atual)
     ]
 
-    if "_is_negativo" not in df_mes.columns: df_mes = df_mes.assign(_is_negativo=False)
-    if "_valor_liquido" not in df_mes.columns: df_mes = df_mes.assign(_valor_liquido=0.0)
-    total_mes  = df_mes["_valor_liquido"].sum()
-    qtd_mes    = int(df_mes[~df_mes["_is_negativo"]].shape[0])
-    ticket_med = df_mes[~df_mes["_is_negativo"]]["_valor_liquido"].mean()
-    cancel_mes = df_mes[df_mes["_is_negativo"]]["_valor_liquido"].sum()
+    for _col, _val in [("_is_negativo", False), ("_valor_liquido", 0.0)]:
+        if _col not in df_mes.columns:
+            df_mes = df_mes.copy()
+            df_mes[_col] = _val
+    _neg_mes = df_mes["_is_negativo"].astype(bool)
+    total_mes  = float(df_mes["_valor_liquido"].sum())
+    qtd_mes    = int((~_neg_mes).sum())
+    ticket_med = df_mes.loc[~_neg_mes, "_valor_liquido"].mean()
+    cancel_mes = float(df_mes.loc[_neg_mes, "_valor_liquido"].sum())
 
     # KPIs
     c1, c2 = st.columns(2)
