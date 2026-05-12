@@ -441,43 +441,35 @@ SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=cs
 @st.cache_data(ttl=300, show_spinner=False)  # cache de 5 minutos
 def carregar_sheets(url: str) -> pd.DataFrame:
     import io, urllib.request
-    from io import StringIO
+    from io import StringIO as _SIO
     try:
         with urllib.request.urlopen(url) as r:
             raw = r.read()
-        from io import StringIO as _SIO
-        # Detecta automaticamente se os dados estão com ; ou ,
+
         for enc in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
             try:
-                # Lê as primeiras linhas para detectar o separador
-                sample_text = raw.decode(enc, errors="replace")[:2000]
-                first_line = sample_text.split("\n")[0]
-                sep = ";" if first_line.count(";") > first_line.count(",") else ","
+                text = raw.decode(enc)
+                # Detecta separador pela primeira linha
+                first_line = text.split("\n")[0]
+                sep = ";" if first_line.count(";") >= 5 else ","
 
-                if sep == ";":
-                    # Dados originais com ; — lê direto
-                    candidate = pd.read_csv(_SIO(sample_text), sep=";")
-                    full = pd.read_csv(_SIO(raw.decode(enc, errors="replace")), sep=";")
-                else:
-                    # Sheets exportou com , — verifica se col A tem ; dentro
-                    raw_df = pd.read_csv(_SIO(sample_text), sep=",")
-                    col_a = raw_df.iloc[:, 0].astype(str)
-                    if col_a.str.contains(";").sum() > len(col_a) * 0.3:
-                        # Re-parseia col A com ;
-                        full_text = raw.decode(enc, errors="replace")
-                        all_rows = pd.read_csv(_SIO(full_text), sep=",").iloc[:, 0].astype(str)
-                        csv_text = "\n".join(all_rows.tolist())
-                        full = pd.read_csv(_SIO(csv_text), sep=";")
-                    else:
-                        full = pd.read_csv(_SIO(raw.decode(enc, errors="replace")), sep=",")
+                df = pd.read_csv(_SIO(text), sep=sep)
+                df.columns = df.columns.str.strip()
 
-                # Valida acentos
-                sample_str = full.iloc[:3, 1].astype(str).str.cat()
-                if "Ã" not in sample_str and "©" not in sample_str:
-                    return full
+                # Se as colunas essenciais existem, retorna
+                if "Vendedor" in df.columns and "Loja" in df.columns:
+                    # Verifica se col 0 tem dados misturados com ;
+                    if df.iloc[:, 0].astype(str).str.contains(";").sum() > len(df) * 0.3:
+                        col_a = df.iloc[:, 0].astype(str)
+                        csv_text = "\n".join(col_a.tolist())
+                        df = pd.read_csv(_SIO(csv_text), sep=";")
+                        df.columns = df.columns.str.strip()
+                    return df
             except Exception:
                 continue
-        return pd.read_csv(io.BytesIO(raw), sep=";", encoding="utf-8")
+
+        st.error("❌ Não foi possível ler o arquivo da planilha.")
+        st.stop()
     except Exception as e:
         st.error(f"❌ Erro ao carregar a planilha: {e}")
         st.stop()
