@@ -249,7 +249,7 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
 
     # ── Calcular Venda Líquida ──
     negativos = cfg["status_negativos"]
-    df["_is_negativo"] = df[cfg["col_status"]].str.lower().str.strip().apply(
+    df["_is_negativo"] = df[cfg["col_status"]].fillna("").astype(str).str.lower().str.strip().apply(
         lambda s: any(neg in s for neg in negativos)
     )
     # Se status negativo → valor vira negativo (cancelamento subtrai)
