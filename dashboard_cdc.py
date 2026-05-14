@@ -316,7 +316,7 @@ def card_metrica(col, label: str, valor: float, delta=None, prefix="R$"):
     col.metric(label, valor_fmt, delta)
 
 
-def ranking_vendedores(df_filtrado: pd.DataFrame, titulo: str):
+def ranking_vendedores(df_filtrado: pd.DataFrame, titulo: str, key: str = ""):
     if df_filtrado.empty:
         st.info("Sem dados para este período.")
         return
@@ -374,7 +374,7 @@ def ranking_vendedores(df_filtrado: pd.DataFrame, titulo: str):
         height=max(200, len(ranking.head(15)) * 44),
     )
     fig.update_traces(textposition="outside", textfont_size=11)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=f"ranking_{key}")
 
 
 def grafico_lojas(df_filtrado: pd.DataFrame):
@@ -571,7 +571,7 @@ with tab1:
     if df_dia.empty:
         st.info(f"Nenhuma venda registrada hoje ({_hoje_str}).")
     else:
-        ranking_vendedores(df_dia, f"🏆 Ranking do Dia — {_hoje_str}")
+        ranking_vendedores(df_dia, f"🏆 Ranking do Dia — {_hoje_str}", key="dia")
 
 
 # ════════════════════════════
@@ -617,7 +617,7 @@ with tab2:
             st.markdown("---")
 
         # Ranking do mês
-        ranking_vendedores(df_mes, "🥇 Grande Competição — Mês")
+        ranking_vendedores(df_mes, "🥇 Grande Competição — Mês", key="mes")
 
 # ── Dados brutos ──
 with st.expander("🔍 Ver dados brutos (conferência)"):
