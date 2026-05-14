@@ -439,7 +439,7 @@ def grafico_evolucao_diaria(df_filtrado: pd.DataFrame):
 st.markdown("""
 <div style="text-align:center;padding:20px 0 8px">
   <div style="font-size:36px">📱</div>
-  <div style="font-size:22px;font-weight:900;letter-spacing:-0.03em">Casa do Celular</div>
+  <div style="font-size:22px;font-weight:900;letter-spacing:-0.03em">TITAS 2</div>
   <div style="font-size:13px;color:#8888AA;margin-top:2px">Ranking de Vendas · Tempo Real</div>
 </div>
 """, unsafe_allow_html=True)
