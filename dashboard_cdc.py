@@ -293,9 +293,9 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
     df["_is_negativo"] = df[cfg["col_status"]].fillna("").astype(str).str.lower().str.strip().apply(
         lambda s: any(neg in s for neg in negativos)
     )
-    # Se status negativo → valor vira negativo (cancelamento subtrai)
+    # Cancelamentos são excluídos do total (valor 0), não subtraídos
     df["_valor_liquido"] = df.apply(
-        lambda r: -abs(r["_valor_raw"]) if r["_is_negativo"] else abs(r["_valor_raw"]),
+        lambda r: 0.0 if r["_is_negativo"] else abs(r["_valor_raw"]),
         axis=1,
     )
 
@@ -560,7 +560,7 @@ with tab1:
     total_dia  = float(df_dia["_valor_liquido"].sum())
     qtd_vendas = int((~_neg).sum())
     qtd_cancel = int(_neg.sum())
-    cancel_val = float(df_dia.loc[_neg, "_valor_liquido"].sum())
+    cancel_val = float(df_dia.loc[_neg, "_valor_raw"].sum())
 
     # KPIs
     c1, c2, c3 = st.columns(3)
@@ -595,7 +595,7 @@ with tab2:
     total_mes  = float(df_mes["_valor_liquido"].sum())
     qtd_mes    = int((~_neg_mes).sum())
     ticket_med = df_mes.loc[~_neg_mes, "_valor_liquido"].mean()
-    cancel_mes = float(df_mes.loc[_neg_mes, "_valor_liquido"].sum())
+    cancel_mes = float(df_mes.loc[_neg_mes, "_valor_raw"].sum())
 
     # KPIs
     c1, c2 = st.columns(2)
@@ -603,7 +603,7 @@ with tab2:
     card_metrica(c2, "🎫 Ticket Médio", ticket_med if not pd.isna(ticket_med) else 0)
     c3, c4 = st.columns(2)
     c3.metric("🛒 Total de Vendas", int(qtd_mes))
-    c4.metric("❌ Cancelamentos (R$)", formatar_brl(abs(cancel_mes)) if cancel_mes < 0 else "R$ 0,00")
+    c4.metric("❌ Cancelamentos (R$)", formatar_brl(cancel_mes) if cancel_mes > 0 else "R$ 0,00")
 
     st.markdown("---")
 
