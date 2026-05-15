@@ -510,12 +510,10 @@ if df is None:
     st.error("Não foi possível processar os dados. Verifique a planilha.")
     st.stop()
 
-# Pega a data mais recente dos dados (evita problema de fuso UTC do servidor)
-try:
-    _datas_validas = df["_date"].dropna()
-    hoje = max(_datas_validas)
-except Exception:
-    hoje = datetime.now().date()
+# Usa a data atual no horário de Brasília (UTC-3)
+from datetime import timezone, timedelta
+_tz_br = timezone(timedelta(hours=-3))
+hoje = datetime.now(_tz_br).date()
 mes_atual = hoje.month
 ano_atual = hoje.year
 # String de data no formato brasileiro
