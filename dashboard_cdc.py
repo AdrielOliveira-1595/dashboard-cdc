@@ -213,6 +213,10 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
 
     df = df.copy()
 
+    # ── Remover duplicatas pelo Id (evita contagem dupla ao acumular CSVs) ──
+    if "Id" in df.columns:
+        df = df.drop_duplicates(subset=["Id"], keep="first")
+
     # ── Datas ──
     # Suporta formatos como "Sáb, 02/05/26 09:01" extraindo dd/mm/yy
     import re as _re
