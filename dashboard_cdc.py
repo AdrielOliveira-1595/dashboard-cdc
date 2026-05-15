@@ -223,19 +223,19 @@ def processar_dados(df: pd.DataFrame) -> pd.DataFrame | None:
         # Remove dia da semana abreviado ex: "sáb., " ou "Sáb, "
         s = _re.sub(r'^[a-záàâãéèêíïóôõöúüçñ]{2,4}\.?,?\s*', '', s, flags=_re.IGNORECASE)
         s = s.strip()
-        # Google Sheets exporta em MM/DD/AA (formato americano)
+        # Formato brasileiro DD/MM/AA (padrão da planilha)
         m = _re.search(r'(\d{1,2}/\d{1,2}/\d{2,4})', s)
         if m:
             parte = m.group(1)
             partes = parte.split("/")
             if len(partes) == 3:
-                mm, dd, yy = partes
-                # Garante mm e dd na ordem correta
+                dd, mm, yy = partes
+                # Garante dd e mm na ordem correta
                 dd, mm = int(dd), int(mm)
                 yy = int(yy)
                 if yy < 100:
                     yy += 2000
-                # Se mm > 12, o formato era DD/MM — corrige
+                # Se mm > 12, os valores estão invertidos — corrige
                 if mm > 12:
                     dd, mm = mm, dd
                 try:
