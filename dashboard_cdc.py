@@ -573,6 +573,12 @@ with tab1:
     if df_dia.empty:
         st.info(f"Nenhuma venda registrada hoje ({_hoje_str}).")
     else:
+        # Performance por loja (só no consolidado)
+        if loja_selecionada == "🏢 Todas as lojas":
+            st.markdown("#### 🏪 Performance por Loja — Hoje")
+            grafico_lojas(df_dia)
+            st.markdown("---")
+
         ranking_vendedores(df_dia, f"🏆 Ranking do Dia — {_hoje_str}", key="dia")
 
 
